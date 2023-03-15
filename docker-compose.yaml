@@ -18,10 +18,10 @@ services:
       - PERSISTENTKEEPALIVE_PEERS= #optional
       - LOG_CONFS=true #optional
     volumes:
-      - ./data:/config
+      - ./wireguard/data:/config
     ports:
       # nginx port
-      - 80:80
+      # - 80:80
       # wireguard port
       - 51820:51820/udp
     sysctls:
@@ -29,6 +29,7 @@ services:
     restart: unless-stopped
 
   proxy-rs:
+    profiles: ["tests", "prod"]
     build:
       context: ./
       dockerfile: Dockerfile
@@ -40,6 +41,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   nginx:
+    profiles: ["tests", "prod"]
     container_name: nginx
     image: nginx
     volumes:
