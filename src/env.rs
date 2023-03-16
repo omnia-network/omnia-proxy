@@ -9,6 +9,26 @@ pub fn get_env_var(var_name: &str) -> String {
     }
 }
 
-pub fn load_env_variables() -> Result<std::path::PathBuf, dotenvy::Error> {
-    dotenv()
+pub fn load_env_variables() -> Result<(), dotenvy::Error> {
+    match env::var("ENV") {
+        Ok(val) => {
+            if val == "production" {
+                println!("ENV set to production, skipping loading .env file");
+                Ok(())
+            } else {
+                println!("ENV not set to production, loading .env file");
+                match dotenv() {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(e),
+                }
+            }
+        }
+        Err(_) => {
+            println!("ENV not set, loading .env file");
+            match dotenv() {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e),
+            }
+        }
+    }
 }

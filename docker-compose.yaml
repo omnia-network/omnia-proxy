@@ -40,6 +40,7 @@ services:
     restart: unless-stopped
     network_mode: service:wireguard
     environment:
+      - ENV=$ENV
       - LISTEN_PORT=$LISTEN_PORT
       - WIREGUARD_CONTAINER_NAME=wireguard
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
