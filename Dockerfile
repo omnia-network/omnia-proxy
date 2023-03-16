@@ -25,6 +25,6 @@ RUN cargo build
 FROM debian:bullseye-slim AS runner
 WORKDIR /proxy
 # copy the proxy binary
-COPY --from=builder /proxy/target/release/omnia-proxy .
+COPY --from=builder /proxy/target/debug/omnia-proxy .
 # run the proxy
 CMD ["./omnia-proxy"]
