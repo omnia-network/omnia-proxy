@@ -20,8 +20,8 @@ services:
     volumes:
       - ./wireguard/data:/config
     ports:
-      # nginx port
-      # - 80:80
+      # proxy http port
+      - $LISTEN_PORT:$LISTEN_PORT
       # wireguard port
       - 51820:51820/udp
     sysctls:
@@ -37,14 +37,9 @@ services:
     container_name: proxy-rs
     restart: unless-stopped
     network_mode: service:wireguard
+    environment:
+      - LISTEN_PORT=$LISTEN_PORT
+      - WIREGUARD_CONTAINER_NAME=wireguard
+      - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
-  nginx:
-    profiles: ["tests", "prod"]
-    container_name: nginx
-    image: nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-    # this connects nginx to wireguard network, enabling it to forward traffic to clients
-    # network_mode: service:wireguard
