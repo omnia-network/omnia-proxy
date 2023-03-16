@@ -35,6 +35,8 @@ services:
       dockerfile: Dockerfile
     image: omnia/proxy-rs
     container_name: proxy-rs
+    depends_on:
+      - wireguard
     restart: unless-stopped
     network_mode: service:wireguard
     environment:
