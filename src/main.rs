@@ -125,7 +125,5 @@ async fn main() {
     println!("Listening on port: {}", port);
 
     // spawn proxy server
-    warp::serve(app)
-        .run(([0, 0, 0, 0], port.parse::<u16>().unwrap()))
-        .await;
+    warp::serve(app).run(([0, 0, 0, 0], 8080)).await;
 }
