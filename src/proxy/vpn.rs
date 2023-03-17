@@ -5,6 +5,7 @@ use crate::models::GenericError;
 use super::{docker::wg_docker_command, ip::next_available_ipv4_address, models::RegisteredPeer};
 
 const WG_NETMASK: Ipv4Addr = Ipv4Addr::new(255, 255, 255, 0);
+const WG_NETWORK_ADDR: Ipv4Addr = Ipv4Addr::new(10, 13, 13, 0);
 
 /// Checks if Wireguard is running
 pub fn check_vpn() -> Result<String, GenericError> {
@@ -141,7 +142,7 @@ impl VPN {
         public_key: String,
         preshared_key: Option<String>,
     ) -> Result<RegisteredPeer, GenericError> {
-        let ip_addr = next_available_ipv4_address(&self.assigned_ips, WG_NETMASK);
+        let ip_addr = next_available_ipv4_address(&self.assigned_ips, WG_NETMASK, WG_NETWORK_ADDR);
 
         match ip_addr {
             Some(ip_addr) => {
