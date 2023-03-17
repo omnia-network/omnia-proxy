@@ -18,6 +18,8 @@ pub fn next_ipv4_address(ip: Ipv4Addr, netmask: Ipv4Mask) -> Option<Ipv4Addr> {
         .checked_add(1)?
         .min(network_prefix + network_range);
 
+    println!("next_ip_num: {}", next_ip_num);
+
     // Convert the result back to an IPv4 address
     Some(Ipv4Addr::from(next_ip_num))
 }
@@ -34,6 +36,8 @@ pub fn next_available_ipv4_address(ip_addrs: &[Ipv4Addr], netmask: Ipv4Mask) -> 
             max_ip_num = ip_num;
         }
     }
+
+    println!("max_ip_num: {}", max_ip_num);
 
     if max_ip_num == u32::MIN {
         None
