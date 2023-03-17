@@ -56,10 +56,13 @@ fn add_remote_address_to_headers(
 ) -> (String, String, FullPath, QueryParameters, Method, HeaderMap) {
     let proxy_db = proxy_db.lock().unwrap();
 
-    let remote_ip = proxy_db
+    let remote_ip = match proxy_db
         .internal_mapping
         .get(&remote_addr.unwrap().ip().to_string())
-        .unwrap();
+    {
+        Some(ip) => ip.parse().unwrap(),
+        None => String::new(),
+    };
 
     let mut headers: HeaderMap = request_headers.clone();
     headers.insert(FORWARDED, remote_ip.parse().unwrap());
