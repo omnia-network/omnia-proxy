@@ -27,7 +27,7 @@ WORKDIR /proxy
 # copy the proxy binary
 COPY --from=builder /proxy/target/debug/omnia-proxy .
 
-EXPOSE 8080
+EXPOSE 8081
 
 # run the proxy
 CMD ["./omnia-proxy"]

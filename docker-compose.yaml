@@ -21,7 +21,7 @@ services:
       - ./wireguard/data:/config
     ports:
       # proxy http port
-      - $LISTEN_PORT:8080
+      - $LISTEN_PORT:8081
       # wireguard port
       - 51820:51820/udp
     sysctls:

@@ -120,7 +120,7 @@ async fn main() {
 
     let app = warp::any().and(register_to_vpn.or(proxy));
 
-    let port = 8080;
+    let port = 8081;
 
     println!("Listening on port: {}", port);
 
