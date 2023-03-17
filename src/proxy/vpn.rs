@@ -170,7 +170,7 @@ impl VPN {
                         let peer = RegisteredPeer {
                             public_key,
                             preshared_key,
-                            allowed_ips: Vec::new(),
+                            allowed_ips: vec![ip_addr],
                         };
 
                         self.peers.push(peer.clone());
