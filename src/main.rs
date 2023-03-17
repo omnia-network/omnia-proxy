@@ -64,6 +64,8 @@ fn add_remote_address_to_headers(
         None => String::new(),
     };
 
+    println!("Proxying for remote IP: {}", remote_ip);
+
     let mut headers: HeaderMap = request_headers.clone();
     headers.insert(FORWARDED, remote_ip.parse().unwrap());
 
