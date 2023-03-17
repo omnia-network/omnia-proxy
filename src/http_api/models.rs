@@ -8,7 +8,8 @@ pub struct RegisterPeerRequestBody {
 
 #[derive(Serialize)]
 pub struct RegisterPeerResponseBody {
-  
+  pub server_public_key: String,
+  pub assigned_ip: String,
 }
 
 #[derive(Debug)]

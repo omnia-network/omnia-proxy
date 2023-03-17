@@ -24,7 +24,10 @@ pub fn handle_register_to_vpn(
         match proxy_db.vpn.add_peer(request_body.public_key, request_body.preshared_key) {
             Ok(peer) => {
                 println!("Registered peer: {:?}", peer);
-                let response = RegisterPeerResponseBody {};
+                let response = RegisterPeerResponseBody {
+                    server_public_key: proxy_db.vpn.interface_public_key.clone(),
+                    assigned_ip: peer.allowed_ips[0].to_string(),
+                };
                 Ok(json(&response))
             }
             Err(e) => {
