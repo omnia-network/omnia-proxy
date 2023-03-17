@@ -120,10 +120,10 @@ async fn main() {
 
     let app = warp::any().and(register_to_vpn.or(proxy));
 
-    let port = get_env_var("LISTEN_PORT");
+    let port = 8080;
 
     println!("Listening on port: {}", port);
 
     // spawn proxy server
-    warp::serve(app).run(([0, 0, 0, 0], 8080)).await;
+    warp::serve(app).run(([0, 0, 0, 0], port)).await;
 }
