@@ -98,7 +98,7 @@ async fn main() {
 
     println!("Initialized VPN: {:?}", shared_vpn);
 
-    let register_to_vpn = warp::path("register-to-vpn")
+    let register_to_vpn = warp::post().and(warp::path("register-to-vpn"))
         .and(warp::any().map(move || shared_vpn.clone()))
         .and(warp::addr::remote())
         .and(warp::body::json::<RegisterPeerRequestBody>())
