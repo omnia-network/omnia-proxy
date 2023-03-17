@@ -22,10 +22,10 @@ fn next_ipv4_address(ip_num: u32, netmask: Ipv4Mask) -> Option<Ipv4Addr> {
 pub fn next_available_ipv4_address(
     ip_addrs: &[Ipv4Addr],
     netmask: Ipv4Mask,
-    network_addr: Ipv4Addr,
+    first_addr: Ipv4Addr,
 ) -> Option<Ipv4Addr> {
-    // set it to the first address in the network
-    let mut max_ip_num = u32::from(network_addr);
+    // set it to the first address in the network, which is the wireguard interface address
+    let mut max_ip_num = u32::from(first_addr);
 
     for &ip in ip_addrs {
         let ip_num = u32::from(ip);
