@@ -156,6 +156,17 @@ impl VPN {
                     ip_addr.to_string().as_str(),
                 ]) {
                     Ok(_) => {
+                        // here we also need to execute `addconf` to add the peer to the config file permanently
+
+                        // let mut command = vec![
+                        //     "addconf",
+                        //     self.interface_name.as_str(),
+                        //     "peer",
+                        //     public_key.as_str(),
+                        //     "allowed-ips",
+                        //     ip_addr.to_string().as_str(),
+                        // ];
+
                         let peer = RegisteredPeer {
                             public_key,
                             preshared_key,
