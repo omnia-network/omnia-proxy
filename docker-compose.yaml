@@ -27,6 +27,9 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
+    networks:
+      vpn:
+        ipv4_address: 10.0.1.2
 
   proxy-rs:
     profiles: ["tests", "prod"]
@@ -38,10 +41,18 @@ services:
     depends_on:
       - wireguard
     restart: unless-stopped
-    network_mode: service:wireguard
     environment:
       - ENV=$ENV
       - WIREGUARD_CONTAINER_NAME=wireguard
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      vpn:
+        ipv4_address: 10.0.1.3
+
+networks:
+  vpn:
+    ipam:
+      config:
+      - subnet: 10.0.1.0/24
