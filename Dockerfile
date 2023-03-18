@@ -3,7 +3,7 @@ FROM rust:bullseye AS deps
 WORKDIR /proxy
 # install docker inside the image in order to send shell commands to wireguard container
 RUN apt update && \
-    apt install -qy curl && \
+    apt install -qy curl wireguard net-tools && \
     curl -sSL https://get.docker.com/ | sh
 RUN cargo install cargo-chef
 
@@ -27,7 +27,10 @@ WORKDIR /proxy
 # copy the proxy binary
 COPY --from=builder /proxy/target/debug/omnia-proxy .
 
+COPY ./scripts/start-proxy.sh .
+RUN chmod +x start-proxy.sh
+
 EXPOSE 8081
 
 # run the proxy
-CMD ["./omnia-proxy"]
+CMD ["./start-proxy.sh"]

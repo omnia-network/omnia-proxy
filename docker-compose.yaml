@@ -20,8 +20,6 @@ services:
     volumes:
       - ./wireguard/data:/config
     ports:
-      # proxy http port
-      - $PROXY_PUBLIC_PORT:8081
       # wireguard port
       - 51820:51820/udp
     sysctls:
@@ -44,4 +42,7 @@ services:
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    network_mode: service:wireguard
+      - ./wireguard/data/peer1/peer1.conf:/proxy/peer1.conf
+    ports:
+      # proxy http port
+      - $PROXY_PUBLIC_PORT:8081
