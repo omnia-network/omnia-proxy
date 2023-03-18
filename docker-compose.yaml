@@ -11,7 +11,7 @@ services:
       - TZ=Europe/Zurich
       - SERVERURL=$PROXY_SERVER_PUBLIC_URL #optional
       - SERVERPORT=51820 #optional
-      - PEERS=0 #optional
+      - PEERS=proxy #optional
       - PEERDNS=auto #optional
       - INTERNAL_SUBNET=10.13.13.0 #optional
       - ALLOWEDIPS=0.0.0.0/0 #optional
@@ -42,7 +42,7 @@ services:
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./wireguard/data/peer1/peer1.conf:/proxy/peer1.conf
+      - ./wireguard/data/peer1/peer_proxy.conf:/proxy/peer_proxy.conf
     ports:
       # proxy http port
       - $PROXY_PUBLIC_PORT:8081
