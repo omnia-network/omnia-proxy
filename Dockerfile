@@ -1,10 +1,7 @@
 ### install packages
 FROM rust:bullseye AS deps
 WORKDIR /proxy
-# install docker inside the image in order to send shell commands to wireguard container
-RUN apt update && \
-    apt install -qy curl wireguard net-tools iproute2 && \
-    curl -sSL https://get.docker.com/ | sh
+# this takes a while due to crates index update, so we do it first
 RUN cargo install cargo-chef
 
 ### prepare the build
@@ -21,8 +18,15 @@ RUN cargo chef cook --recipe-path recipe.json
 COPY . .
 RUN cargo build
 
+### install linux packages
+FROM deps AS installer
+# install docker inside the image in order to send shell commands to wireguard container
+RUN apt update && \
+    apt install -qy curl wireguard net-tools iproute2 && \
+    curl -sSL https://get.docker.com/ | sh
+
 ### run the proxy
-FROM deps AS runner
+FROM installer AS runner
 WORKDIR /proxy
 # copy the proxy binary
 COPY --from=builder /proxy/target/debug/omnia-proxy .
