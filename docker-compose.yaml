@@ -20,6 +20,8 @@ services:
     volumes:
       - ./volumes/wireguard/data:/config
     ports:
+      # proxy http port
+      - $PROXY_PUBLIC_PORT:8081
       # wireguard port
       - 51820:51820/udp
     sysctls:
@@ -33,9 +35,6 @@ services:
       dockerfile: Dockerfile
     image: omnia/proxy-rs
     container_name: proxy-rs
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
     depends_on:
       - wireguard
     restart: unless-stopped
@@ -45,7 +44,4 @@ services:
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./volumes/proxy/data/wg0.conf:/proxy/wg0.conf
-    ports:
-      # proxy http port
-      - $PROXY_PUBLIC_PORT:8081
+    network_mode: service:wireguard

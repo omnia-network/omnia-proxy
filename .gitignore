@@ -9,8 +9,5 @@ target/
 volumes/wireguard/data/**/*
 !volumes/wireguard/data/.gitkeep
 
-volumes/proxy/data/**/*
-!volumes/proxy/data/.gitkeep
-
 .env*
 !.env.example
