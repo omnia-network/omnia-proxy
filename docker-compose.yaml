@@ -18,7 +18,7 @@ services:
       - PERSISTENTKEEPALIVE_PEERS= #optional
       - LOG_CONFS=true #optional
     volumes:
-      - ./wireguard/data:/config
+      - ./volumes/wireguard/data:/config
     ports:
       # wireguard port
       - 51820:51820/udp
@@ -42,7 +42,7 @@ services:
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./wireguard/data/peer1/peer_proxy.conf:/proxy/peer_proxy.conf
+      - ./volumes/proxy/data/wg0.conf:/proxy/wg0.conf
     ports:
       # proxy http port
       - $PROXY_PUBLIC_PORT:8081

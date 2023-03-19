@@ -1,6 +1,6 @@
 .devcontainer/
 target/
-wireguard/
+volumes/
 .env*
 .gitignore
 docker-compose.yaml

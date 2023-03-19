@@ -1,6 +1,6 @@
 #!/bin/bash
 
-wg-quick up ./peer_proxy.conf
+wg-quick up ./wg0.conf
 
 ifconfig
 
