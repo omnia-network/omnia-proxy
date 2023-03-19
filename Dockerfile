@@ -3,7 +3,7 @@ FROM rust:bullseye AS deps
 WORKDIR /proxy
 # install docker inside the image in order to send shell commands to wireguard container
 RUN apt update && \
-    apt install -qy curl wireguard net-tools && \
+    apt install -qy curl wireguard net-tools iproute2 && \
     curl -sSL https://get.docker.com/ | sh
 RUN cargo install cargo-chef
 

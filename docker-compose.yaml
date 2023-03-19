@@ -33,6 +33,9 @@ services:
       dockerfile: Dockerfile
     image: omnia/proxy-rs
     container_name: proxy-rs
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
     depends_on:
       - wireguard
     restart: unless-stopped
