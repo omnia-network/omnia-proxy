@@ -4,7 +4,7 @@ use std::{
 };
 use warp::reply::{json, Json};
 
-use crate::proxy::proxy_db::ProxyDB;
+use crate::{env::get_env_var, proxy::proxy_db::ProxyDB};
 
 use super::models::{ApiError, RegisterPeerRequestBody, RegisterPeerResponseBody};
 
@@ -21,13 +21,23 @@ pub fn handle_register_to_vpn(
         println!("Remote address: {}", addr);
         println!("Registering peer: {:?}", request_body);
 
-        match proxy_db.vpn.add_peer(request_body.public_key, request_body.preshared_key) {
+        match proxy_db
+            .vpn
+            .add_peer(request_body.public_key, request_body.preshared_key)
+        {
             Ok(peer) => {
                 println!("Registered peer: {:?}", peer);
+
+                let peer_public_ip = addr.ip().to_string();
+                let peer_vpn_ip = peer.allowed_ips[0].to_string();
+                proxy_db.map_peer_addresses(peer_public_ip, peer_vpn_ip.clone());
+
                 let response = RegisterPeerResponseBody {
                     server_public_key: proxy_db.vpn.interface_public_key.clone(),
-                    assigned_ip: peer.allowed_ips[0].to_string(),
+                    assigned_ip: peer_vpn_ip,
+                    proxy_address: get_env_var("PROXY_INTERNAL_ADDRESS"),
                 };
+
                 Ok(json(&response))
             }
             Err(e) => {

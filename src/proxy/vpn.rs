@@ -41,14 +41,14 @@ pub fn get_public_key(interface_name: &str) -> Result<String, GenericError> {
 }
 
 #[derive(Debug)]
-pub struct VPN {
+pub struct Vpn {
     pub interface_name: String,
     pub interface_public_key: String,
     pub peers: Vec<RegisteredPeer>,
     pub assigned_ips: Vec<Ipv4Addr>,
 }
 
-impl VPN {
+impl Vpn {
     pub fn new() -> Result<Self, GenericError> {
         match get_interface_name() {
             Ok(interface_name) => match get_public_key(interface_name.as_str()) {

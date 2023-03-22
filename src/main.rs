@@ -4,9 +4,9 @@ mod models;
 mod proxy;
 
 use reqwest::header::FORWARDED;
-use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 use warp::filters::path::FullPath;
 use warp::reject;
 use warp::{
@@ -44,10 +44,8 @@ pub type Request = (
 
 /// The `remote_addr` parameter in this case is the address of the peer inside the VPN
 /// This function maps the peer's public IP to the peer's VPN IP
-fn add_remote_address_to_headers(
+fn forward_request(
     proxy_db: Arc<Mutex<ProxyDB>>,
-    proxy_address: String,
-    base_path: String,
     path: FullPath,
     query_params: QueryParameters,
     method: Method,
@@ -58,42 +56,50 @@ fn add_remote_address_to_headers(
 
     println!("Proxying for remote address: {:?}", remote_addr);
 
-    let remote_ip = match proxy_db
-        .internal_mapping
-        .get(&remote_addr.unwrap().ip().to_string())
-    {
-        Some(ip) => ip.parse().unwrap(),
-        None => String::new(),
-    };
+    // here we handle two cases:
+    // peer -> backend: the peer is sending a request to the backend, we proxy it attaching the peer's public IP
+    // backend -> peer: the backend is requesting the peer inserting peer's public IP in the `X-Forward-To` header
 
     let mut headers: HeaderMap = request_headers.clone();
-    headers.insert(FORWARDED, remote_ip.parse().unwrap());
+
+    let proxy_address = match headers.get("x-forward-to") {
+        Some(peer_id) => {
+            println!("Backend -> Peer");
+            // backend -> peer
+            // have to forward the request to the peer
+            let p = peer_id.to_str().unwrap();
+            println!("Peer ID: {}", p);
+
+            let peer_internal_ip = match proxy_db.external_mapping.get(&Uuid::try_parse(p).unwrap())
+            {
+                Some(ip) => ip.to_string(),
+                None => "".to_string(),
+            };
+
+            println!("Peer internal IP: {}", peer_internal_ip);
+
+            peer_internal_ip
+        }
+        None => {
+            println!("Peer -> Backend");
+            // peer -> backend
+            // we need to add the `Forwarded` header
+            headers.insert(
+                FORWARDED,
+                remote_addr.unwrap().ip().to_string().parse().unwrap(),
+            );
+            get_env_var("OMNIA_BACKEND_CANISTER_URL").to_string()
+        }
+    };
 
     (
         proxy_address,
-        base_path,
+        "".to_string(),
         path,
         query_params,
         method,
         headers,
     )
-}
-
-fn custom_filter() -> impl Filter<Extract = Request, Error = Infallible> + Clone {
-    let proxy_address = warp::any().map(move || {
-        get_env_var("OMNIA_BACKEND_CANISTER_URL")
-            .to_string()
-            .clone()
-    });
-    let base_path = warp::any().map(move || "".to_string().clone());
-
-    proxy_address
-        .and(base_path)
-        .and(warp::path::full())
-        .and(query_params_filter())
-        .and(warp::method())
-        .and(warp::addr::remote())
-        .and(warp::header::headers_cloned())
 }
 
 #[tokio::main]
@@ -123,8 +129,12 @@ async fn main() {
 
     let proxy = warp::any()
         .and(shared_filter)
-        .and(custom_filter())
-        .map(add_remote_address_to_headers)
+        .and(warp::path::full())
+        .and(query_params_filter())
+        .and(warp::method())
+        .and(warp::addr::remote())
+        .and(warp::header::headers_cloned())
+        .map(forward_request)
         .untuple_one()
         .and(warp::body::bytes())
         .and_then(proxy_to_and_forward_response)
