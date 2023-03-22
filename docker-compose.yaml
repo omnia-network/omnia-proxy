@@ -11,7 +11,7 @@ services:
       - TZ=Europe/Zurich
       - SERVERURL=$PROXY_SERVER_PUBLIC_URL #optional
       - SERVERPORT=51820 #optional
-      - PEERS=proxy #optional
+      - PEERS=0 #optional
       - PEERDNS=auto #optional
       - INTERNAL_SUBNET=10.13.13.0 #optional
       - ALLOWEDIPS=0.0.0.0/0 #optional
@@ -27,6 +27,9 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
+    networks:
+      omnia-proxy-network:
+        ipv4_address: 172.19.0.2
 
   proxy-rs:
     profiles: ["tests", "prod"]
@@ -42,6 +45,17 @@ services:
       - ENV=$ENV
       - WIREGUARD_CONTAINER_NAME=wireguard
       - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
+      # the ip given to wireguard container, since proxy is attached to its network
+      # the port specified is the port exposed by the proxy
+      - PROXY_INTERNAL_ADDRESS=172.19.0.2:8081
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     network_mode: service:wireguard
+
+networks:
+  omnia-proxy-network:
+    name: omnia-proxy-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.0.0/16
