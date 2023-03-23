@@ -42,6 +42,11 @@ impl ProxyDB {
     pub fn map_peer_addresses(&mut self, peer_public_ip: String, peer_vpn_ip: String) {
         let peer_id = Uuid::new_v4();
 
+        println!(
+            "Mapping peer public IP {} to VPN IP {}. Assigned ID: {}",
+            peer_public_ip, peer_vpn_ip, peer_id
+        );
+
         self.internal_mapping
             .insert(peer_public_ip, peer_vpn_ip.clone());
         self.external_mapping.insert(peer_id, peer_vpn_ip);
