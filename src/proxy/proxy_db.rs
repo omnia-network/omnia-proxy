@@ -6,7 +6,7 @@ use uuid::Uuid;
 use super::vpn::Vpn;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ProxyDB {
+pub struct ProxyDb {
     /// The mapping between IP assigned in the VPN and the public IP of the peer
     pub internal_mapping: BTreeMap<Ipv4Addr, String>,
     /// The mapping between the public subdomain/id and peer IP assigned in the VPN
@@ -16,9 +16,9 @@ pub struct ProxyDB {
     pub vpn: Vpn,
 }
 
-impl ProxyDB {
+impl ProxyDb {
     pub fn new() -> Self {
-        let mut instance = ProxyDB::default();
+        let mut instance = ProxyDb::default();
 
         instance.vpn = instance.new_vpn();
 
@@ -95,7 +95,11 @@ impl ProxyDB {
             Ok(db_json) => {
                 println!("Loading DB from disk...");
                 // TODO: handle unwrap
-                serde_json::from_str(&db_json).unwrap()
+                let instance: ProxyDb = serde_json::from_str(&db_json).unwrap();
+
+                println!("Initialized VPN: {:?}", instance.vpn);
+
+                instance
             }
             Err(_) => {
                 println!("DB not found, creating new one...");

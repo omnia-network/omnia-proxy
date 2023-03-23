@@ -4,14 +4,14 @@ use std::{
 };
 use warp::reply::{json, Json};
 
-use crate::{env::get_env_var, proxy::proxy_db::ProxyDB};
+use crate::{env::get_env_var, proxy::proxy_db::ProxyDb};
 
 use super::models::{ApiError, RegisterPeerRequestBody, RegisterPeerResponseBody};
 
 // registers the new peer to the vpn, sending a docker command to wireguard
 // saves the remote_address of the peer to a mapping
 pub fn handle_register_to_vpn(
-    proxy_db: Arc<Mutex<ProxyDB>>,
+    proxy_db: Arc<Mutex<ProxyDb>>,
     remote_address: Option<SocketAddr>,
     request_body: RegisterPeerRequestBody,
 ) -> Result<Json, ApiError> {

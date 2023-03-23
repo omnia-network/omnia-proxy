@@ -17,7 +17,7 @@ use warp_reverse_proxy::{proxy_to_and_forward_response, query_params_filter, Que
 
 use env::{get_env_var, load_env_variables};
 use http_api::{handlers::handle_register_to_vpn, models::RegisterPeerRequestBody};
-use proxy::{proxy_db::ProxyDB, vpn::check_vpn};
+use proxy::{proxy_db::ProxyDb, vpn::check_vpn};
 
 async fn log_response(response: Response<Body>) -> Result<impl Reply, Rejection> {
     println!("{:?}", response);
@@ -37,7 +37,7 @@ pub type Request = (
 /// The `remote_addr` parameter in this case is the address of the peer inside the VPN
 /// This function maps the peer's public IP to the peer's VPN IP
 fn forward_request(
-    proxy_db: Arc<Mutex<ProxyDB>>,
+    proxy_db: Arc<Mutex<ProxyDb>>,
     path: FullPath,
     query_params: QueryParameters,
     method: Method,
@@ -135,7 +135,7 @@ async fn main() {
     // check if wireguard is running, otherwise throw
     assert!(check_vpn().is_ok(), "Wireguard is not running");
 
-    let proxy_db = ProxyDB::load_db();
+    let proxy_db = ProxyDb::load_db();
     let shared_proxy_db = Arc::new(Mutex::new(proxy_db));
 
     let shared_filter = warp::any().map(move || shared_proxy_db.clone());
