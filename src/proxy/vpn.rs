@@ -145,7 +145,7 @@ impl Vpn {
 
         match output {
             Ok(result) => {
-                let peers: RegisteredPeersMap = BTreeMap::new();
+                let mut peers: RegisteredPeersMap = BTreeMap::new();
 
                 // first line is the interface config, so we skip it
                 result.lines().skip(1).for_each(|peer| {
@@ -176,7 +176,7 @@ impl Vpn {
                     if allowed_ips.len() == 0 {
                         println!("No ip found for peer {public_key}, skipping...");
                     } else {
-                        self.peers.insert(
+                        peers.insert(
                             public_key.to_string(),
                             RegisteredPeer {
                                 public_key: public_key.to_string(),
