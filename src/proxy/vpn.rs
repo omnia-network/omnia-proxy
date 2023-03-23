@@ -1,4 +1,7 @@
-use std::{net::Ipv4Addr, str::FromStr};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    str::FromStr,
+};
 
 use crate::models::GenericError;
 
@@ -40,7 +43,7 @@ pub fn get_public_key(interface_name: &str) -> Result<String, GenericError> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Vpn {
     pub interface_name: String,
     pub interface_public_key: String,
@@ -89,7 +92,7 @@ impl Vpn {
 
                         let public_key = split.next().unwrap();
                         let preshared_key = split.next().unwrap();
-                        let _port = split.next().unwrap();
+                        let remote_address = split.next().unwrap();
                         let allowed_ips = split.next().unwrap();
 
                         let allowed_ips = allowed_ips.split(',').fold(
@@ -119,6 +122,17 @@ impl Vpn {
                                 } else {
                                     Some(preshared_key.to_string())
                                 },
+                                remote_address: if remote_address == ""
+                                    || remote_address == "(none)"
+                                {
+                                    None
+                                } else {
+                                    Some(
+                                        remote_address
+                                            .parse()
+                                            .expect("Error parsing remote ip for peer"),
+                                    )
+                                },
                                 allowed_ips: allowed_ips.clone(),
                             });
                         }
@@ -138,10 +152,12 @@ impl Vpn {
     /// Adds a peer to the VPN
     /// the function automatically assigns an ip to the peer, which is the next available ip
     /// `public_key`: the public key of the peer to add to the vpn
+    /// `preshared_key`: the preshared key of the peer to add to the vpn
     pub fn add_peer(
         &mut self,
         public_key: String,
         preshared_key: Option<String>,
+        remote_address: Option<SocketAddr>,
     ) -> Result<RegisteredPeer, GenericError> {
         let ip_addr = next_available_ipv4_address(&self.assigned_ips, WG_NETMASK, WG_FIRST_ADDR);
 
@@ -149,22 +165,28 @@ impl Vpn {
             Some(ip_addr) => {
                 self.assigned_ips.push(ip_addr);
 
-                match wg_docker_command(vec![
-                    "set",
-                    self.interface_name.as_str(),
-                    "peer",
-                    public_key.as_str(),
-                    "allowed-ips",
-                    ip_addr.to_string().as_str(),
-                ], false) {
+                match wg_docker_command(
+                    vec![
+                        "set",
+                        self.interface_name.as_str(),
+                        "peer",
+                        public_key.as_str(),
+                        "allowed-ips",
+                        ip_addr.to_string().as_str(),
+                    ],
+                    false,
+                ) {
                     Ok(_) => {
                         // we need to restart the interface to apply the changes
-                        wg_docker_command(vec!["down", self.interface_name.as_str()], true).expect("Error restarting interface");
-                        wg_docker_command(vec!["up", self.interface_name.as_str()], true).expect("Error restarting interface");
+                        wg_docker_command(vec!["down", self.interface_name.as_str()], true)
+                            .expect("Error restarting interface");
+                        wg_docker_command(vec!["up", self.interface_name.as_str()], true)
+                            .expect("Error restarting interface");
 
                         let peer = RegisteredPeer {
                             public_key,
                             preshared_key,
+                            remote_address,
                             allowed_ips: vec![ip_addr],
                         };
 
