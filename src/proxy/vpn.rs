@@ -5,6 +5,8 @@ use std::{
     str::FromStr,
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::models::GenericError;
 
 use super::{
@@ -99,7 +101,7 @@ pub fn get_peer_config_by_vpn_ip(peer_vpn_ip: Ipv4Addr) -> Result<RegisteredPeer
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Vpn {
     pub interface_name: String,
     pub interface_public_key: String,

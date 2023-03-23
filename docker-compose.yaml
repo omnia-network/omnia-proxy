@@ -50,6 +50,7 @@ services:
       - PROXY_INTERNAL_ADDRESS=172.19.0.2:8081
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./volumes/proxy-rs/data:/proxy/data
     network_mode: service:wireguard
 
 networks:

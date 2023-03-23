@@ -1,10 +1,11 @@
-use std::{collections::BTreeMap, net::Ipv4Addr};
+use std::{collections::BTreeMap, fs, net::Ipv4Addr};
 
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::vpn::Vpn;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ProxyDB {
     /// The mapping between IP assigned in the VPN and the public IP of the peer
     pub internal_mapping: BTreeMap<Ipv4Addr, String>,
@@ -57,6 +58,10 @@ impl ProxyDB {
         self.internal_mapping
             .insert(peer_vpn_ip.clone(), peer_public_ip);
         self.external_mapping.insert(peer_id, peer_vpn_ip);
+
+        // save db
+        // TODO: improve the logic to save db to file
+        self.save_db();
     }
 
     // TODO: handle unwraps
@@ -65,14 +70,44 @@ impl ProxyDB {
             Some(peer_public_ip) => peer_public_ip.to_owned(),
             None => {
                 // we need to read it from wg
-                self.vpn
+                let public_ip = self
+                    .vpn
                     .refresh_and_get_peer(peer_vpn_ip)
                     .unwrap()
                     .remote_address
                     .unwrap()
                     .ip()
-                    .to_string()
+                    .to_string();
+
+                // save the DB to disk
+                // TODO: change the logic for saving the db to file
+                self.save_db();
+
+                public_ip
             }
         }
+    }
+
+    /// Load the DB from disk
+    /// If the DB doesn't exist, create a new one
+    pub fn load_db() -> Self {
+        match fs::read_to_string("data/db.json") {
+            Ok(db_json) => {
+                println!("Loading DB from disk...");
+                // TODO: handle unwrap
+                serde_json::from_str(&db_json).unwrap()
+            }
+            Err(_) => {
+                println!("DB not found, creating new one...");
+                Self::new()
+            }
+        }
+    }
+
+    /// Save the DB to disk
+    pub fn save_db(&self) {
+        // TODO: handle unwrap
+        let db_json = serde_json::to_string(&self).unwrap();
+        fs::write("data/db.json", db_json).unwrap();
     }
 }

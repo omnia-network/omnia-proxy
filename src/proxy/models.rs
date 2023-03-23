@@ -3,7 +3,9 @@ use std::{
     net::{Ipv4Addr, SocketAddr},
 };
 
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisteredPeer {
     /// The public key of the peer
     pub public_key: String,

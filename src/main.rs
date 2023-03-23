@@ -24,13 +24,6 @@ async fn log_response(response: Response<Body>) -> Result<impl Reply, Rejection>
     Ok(response)
 }
 
-// async fn log_request(
-//     request: Request,
-// ) -> Result<Request, Rejection> {
-//     println!("{:?}", request);
-//     Ok(request)
-// }
-
 pub type Request = (
     String,
     String,
@@ -86,7 +79,7 @@ fn forward_request(
             // but first we check if the peer is registered
             // if not, we return an empty proxy address
 
-            // TODO: handle empty string returns
+            // TODO: handle empty string returns and expect
             match remote_addr {
                 Some(addr) => {
                     match addr.ip() {
@@ -105,7 +98,8 @@ fn forward_request(
                                 }
                                 None => {
                                     // peer doesn't have a public ip, let's try to read it from vpn
-                                    format!("http://{}", proxy_db.get_peer_public_ip(ip_v4)).to_string()
+                                    format!("http://{}", proxy_db.get_peer_public_ip(ip_v4))
+                                        .to_string()
                                 }
                             }
                         }
@@ -138,7 +132,7 @@ async fn main() {
     // check if wireguard is running, otherwise throw
     assert!(check_vpn().is_ok(), "Wireguard is not running");
 
-    let proxy_db = ProxyDB::new();
+    let proxy_db = ProxyDB::load_db();
     let shared_proxy_db = Arc::new(Mutex::new(proxy_db));
 
     let shared_filter = warp::any().map(move || shared_proxy_db.clone());
