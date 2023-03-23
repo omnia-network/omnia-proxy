@@ -3,7 +3,7 @@ mod http_api;
 mod models;
 mod proxy;
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 use warp::filters::path::FullPath;
@@ -51,7 +51,7 @@ fn forward_request(
     remote_addr: Option<SocketAddr>,
     request_headers: HeaderMap,
 ) -> (String, String, FullPath, QueryParameters, Method, HeaderMap) {
-    let proxy_db = proxy_db.lock().unwrap();
+    let mut proxy_db = proxy_db.lock().unwrap();
 
     println!("Proxying for remote address: {:?}", remote_addr);
 
@@ -86,28 +86,36 @@ fn forward_request(
             // but first we check if the peer is registered
             // if not, we return an empty proxy address
 
+            // TODO: handle empty string returns
             match remote_addr {
                 Some(addr) => {
-                    match proxy_db.internal_mapping.get(&addr.ip().to_string()) {
-                        Some(peer_public_ip) => {
-                            // peer is registered
-                            // we add the `Forwarded` header
-                            headers.insert(
-                                "X-Forwarded-For",
-                                peer_public_ip.parse().expect("Failed to parse forwarded header"),
-                            );
-                            get_env_var("OMNIA_BACKEND_CANISTER_URL")
+                    match addr.ip() {
+                        IpAddr::V4(ip_v4) => {
+                            match proxy_db.internal_mapping.get(&ip_v4) {
+                                Some(peer_public_ip) => {
+                                    // peer is registered
+                                    // we add the `Forwarded` header
+                                    headers.insert(
+                                        "X-Forwarded-For",
+                                        peer_public_ip
+                                            .parse()
+                                            .expect("Failed to parse forwarded header"),
+                                    );
+                                    get_env_var("OMNIA_BACKEND_CANISTER_URL")
+                                }
+                                None => {
+                                    // peer doesn't have a public ip, let's try to read it from vpn
+                                    proxy_db.get_peer_public_ip(ip_v4)
+                                }
+                            }
                         }
-                        None => {
-                            // peer is not registered
-                            // we return an empty proxy address
+                        IpAddr::V6(ip_v6) => {
+                            println!("Peer is using IPv6: {}", ip_v6);
                             "".to_string()
                         }
                     }
-                },
-                None => {
-                    "".to_string()
                 }
+                None => "".to_string(),
             }
         }
     };

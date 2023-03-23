@@ -206,4 +206,30 @@ impl Vpn {
             .to_string()),
         }
     }
+
+    /// updates the internal list of peers
+    /// and then it searches for the peer with the given internal vpn ip
+    /// `ip`: the internal vpn ip of the peer to search for
+    /// returns the peer with the given internal vpn ip
+    /// TODO: extremely inefficient, improve this
+    pub fn refresh_and_get_peer(&mut self, ip: Ipv4Addr) -> Result<&RegisteredPeer, GenericError> {
+        // we update the internal list of peers
+        // and then we search for the peer with the given internal vpn ip
+        match self.get_registered_peers() {
+            Ok(peers) => {
+                self.peers = peers;
+                // search for the peer with the given internal vpn ip
+
+                match self
+                    .peers
+                    .iter()
+                    .find(|peer| peer.allowed_ips.contains(&ip))
+                {
+                    Some(peer) => Ok(peer),
+                    None => Err(format!("Peer with ip {ip} not found").to_string()),
+                }
+            }
+            Err(e) => Err(e),
+        }
+    }
 }
