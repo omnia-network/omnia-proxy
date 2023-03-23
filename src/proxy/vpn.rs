@@ -10,12 +10,12 @@ const WG_FIRST_ADDR: Ipv4Addr = Ipv4Addr::new(10, 13, 13, 1);
 
 /// Checks if Wireguard is running
 pub fn check_vpn() -> Result<String, GenericError> {
-    wg_docker_command(vec!["show"])
+    wg_docker_command(vec!["show"], false)
 }
 
 /// Gets the interface name of the VPN
 pub fn get_interface_name() -> Result<String, GenericError> {
-    let output = wg_docker_command(vec!["show", "interfaces"]);
+    let output = wg_docker_command(vec!["show", "interfaces"], false);
 
     match output {
         Ok(result) => {
@@ -29,7 +29,7 @@ pub fn get_interface_name() -> Result<String, GenericError> {
 /// Gets the public key of the VPN
 /// This is the public key of the interface
 pub fn get_public_key(interface_name: &str) -> Result<String, GenericError> {
-    let output = wg_docker_command(vec!["show", interface_name, "public-key"]);
+    let output = wg_docker_command(vec!["show", interface_name, "public-key"], false);
 
     match output {
         Ok(result) => {
@@ -77,7 +77,7 @@ impl Vpn {
     /// Gets the registered peers of the VPN
     /// and saves them to the `peers` field
     pub fn get_registered_peers(&mut self) -> Result<Vec<RegisteredPeer>, GenericError> {
-        let output = wg_docker_command(vec!["show", self.interface_name.as_str(), "dump"]);
+        let output = wg_docker_command(vec!["show", self.interface_name.as_str(), "dump"], false);
 
         match output {
             Ok(result) => {
@@ -156,18 +156,12 @@ impl Vpn {
                     public_key.as_str(),
                     "allowed-ips",
                     ip_addr.to_string().as_str(),
-                ]) {
+                ], false) {
                     Ok(_) => {
-                        // here we also need to execute `addconf` to add the peer to the config file permanently
+                        // we need to restart the interface to apply the changes
 
-                        // let mut command = vec![
-                        //     "addconf",
-                        //     self.interface_name.as_str(),
-                        //     "peer",
-                        //     public_key.as_str(),
-                        //     "allowed-ips",
-                        //     ip_addr.to_string().as_str(),
-                        // ];
+                        wg_docker_command(vec!["down", self.interface_name.as_str()], true);
+                        wg_docker_command(vec!["up", self.interface_name.as_str()], true);
 
                         let peer = RegisteredPeer {
                             public_key,
