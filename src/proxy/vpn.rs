@@ -71,7 +71,8 @@ pub fn get_peer_config_by_vpn_ip(peer_vpn_ip: Ipv4Addr) -> Result<RegisteredPeer
 
                 let allowed_ips = allowed_ips
                     .split(',')
-                    .map(|ip| Ipv4Addr::from_str(ip).unwrap())
+                    // TODO: handle unwrap
+                    .map(|ip| Ipv4Addr::from_str(ip.split('/').next().unwrap()).unwrap())
                     .collect::<Vec<Ipv4Addr>>();
 
                 if allowed_ips.contains(&peer_vpn_ip) {
