@@ -121,8 +121,8 @@ fn forward_request(
     };
 
     (
-        proxy_address,
-        "/".to_string(),
+        format!("http://{}", proxy_address).to_string(),
+        "".to_string(),
         path,
         query_params,
         method,
