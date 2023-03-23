@@ -79,6 +79,9 @@ fn forward_request(
             // but first we check if the peer is registered
             // if not, we return an empty proxy address
 
+            // just debugging...
+            proxy_db.save_db();
+
             // TODO: handle empty string returns and expect
             match remote_addr {
                 Some(addr) => {
