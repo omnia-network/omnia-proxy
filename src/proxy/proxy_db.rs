@@ -108,6 +108,11 @@ impl ProxyDB {
     pub fn save_db(&self) {
         // TODO: handle unwrap
         let db_json = serde_json::to_string(&self).unwrap();
+        let vpn_json = serde_json::to_string(&self.vpn).unwrap();
+
+        println!("serialized db: {db_json}");
+        println!("serialized db: {vpn_json}");
+
         fs::write("data/db.json", db_json).unwrap();
     }
 }
