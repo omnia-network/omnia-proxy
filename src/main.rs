@@ -3,7 +3,6 @@ mod http_api;
 mod models;
 mod proxy;
 
-use reqwest::header::FORWARDED;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -84,11 +83,32 @@ fn forward_request(
             println!("Peer -> Backend");
             // peer -> backend
             // we need to add the `Forwarded` header
-            headers.insert(
-                FORWARDED,
-                remote_addr.unwrap().ip().to_string().parse().unwrap(),
-            );
-            get_env_var("OMNIA_BACKEND_CANISTER_URL").to_string()
+            // but first we check if the peer is registered
+            // if not, we return an empty proxy address
+
+            match remote_addr {
+                Some(addr) => {
+                    match proxy_db.internal_mapping.get(&addr.ip().to_string()) {
+                        Some(peer_vpn_ip) => {
+                            // peer is registered
+                            // we add the `Forwarded` header
+                            headers.insert(
+                                "X-Forwarded-For",
+                                peer_vpn_ip.parse().expect("Failed to parse forwarded header"),
+                            );
+                            get_env_var("OMNIA_BACKEND_CANISTER_URL")
+                        }
+                        None => {
+                            // peer is not registered
+                            // we return an empty proxy address
+                            "".to_string()
+                        }
+                    }
+                },
+                None => {
+                    "".to_string()
+                }
+            }
         }
     };
 

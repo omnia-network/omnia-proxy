@@ -159,9 +159,8 @@ impl Vpn {
                 ], false) {
                     Ok(_) => {
                         // we need to restart the interface to apply the changes
-
-                        wg_docker_command(vec!["down", self.interface_name.as_str()], true);
-                        wg_docker_command(vec!["up", self.interface_name.as_str()], true);
+                        wg_docker_command(vec!["down", self.interface_name.as_str()], true).expect("Error restarting interface");
+                        wg_docker_command(vec!["up", self.interface_name.as_str()], true).expect("Error restarting interface");
 
                         let peer = RegisteredPeer {
                             public_key,
