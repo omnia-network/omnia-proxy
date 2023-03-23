@@ -45,10 +45,10 @@ PrivateKey = <generated-private-key>
 ```
 In this way, every time the container is stopped and started, the WireGuard configuration will be saved (including newly added Peers) and the container will start with the same configuration. See also [volumes/wireguard/wg0-example.conf](./volumes/wireguard/wg0-example.conf).
 
-To connect a Gateway, send this HTTP request to the proxy:
+To connect a Gateway, send this HTTP request to the `/register-to-vpn` endpoint of the proxy:
 ```bash
 curl -X POST \
-  http://proxy.omnia-iot.com \
+  http://proxy.omnia-iot.com/register-to-vpn \
   -H 'Content-Type: application/json' \
   -d '{
   "public_key": "wireguard-public-key-of-the-gateway",
