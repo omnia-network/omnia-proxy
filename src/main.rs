@@ -105,7 +105,7 @@ fn forward_request(
                                 }
                                 None => {
                                     // peer doesn't have a public ip, let's try to read it from vpn
-                                    proxy_db.get_peer_public_ip(ip_v4)
+                                    format!("http://{}", proxy_db.get_peer_public_ip(ip_v4)).to_string()
                                 }
                             }
                         }
@@ -121,7 +121,7 @@ fn forward_request(
     };
 
     (
-        format!("http://{}", proxy_address).to_string(),
+        proxy_address,
         "".to_string(),
         path,
         query_params,
