@@ -6,7 +6,7 @@ use super::vpn::Vpn;
 
 #[derive(Debug, Default)]
 pub struct ProxyDB {
-    /// The mapping between peer public IP and IP assigned in the VPN
+    /// The mapping between IP assigned in the VPN and the public IP of the peer
     pub internal_mapping: HashMap<String, String>,
     /// The mapping between the public subdomain/id and peer IP assigned in the VPN
     pub external_mapping: HashMap<Uuid, String>,
@@ -48,7 +48,7 @@ impl ProxyDB {
         );
 
         self.internal_mapping
-            .insert(peer_public_ip, peer_vpn_ip.clone());
+            .insert(peer_vpn_ip.clone(), peer_public_ip);
         self.external_mapping.insert(peer_id, peer_vpn_ip);
     }
 }

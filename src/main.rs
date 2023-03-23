@@ -89,12 +89,12 @@ fn forward_request(
             match remote_addr {
                 Some(addr) => {
                     match proxy_db.internal_mapping.get(&addr.ip().to_string()) {
-                        Some(peer_vpn_ip) => {
+                        Some(peer_public_ip) => {
                             // peer is registered
                             // we add the `Forwarded` header
                             headers.insert(
                                 "X-Forwarded-For",
-                                peer_vpn_ip.parse().expect("Failed to parse forwarded header"),
+                                peer_public_ip.parse().expect("Failed to parse forwarded header"),
                             );
                             get_env_var("OMNIA_BACKEND_CANISTER_URL")
                         }
