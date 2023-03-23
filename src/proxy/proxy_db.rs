@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::Ipv4Addr};
+use std::{collections::BTreeMap, net::Ipv4Addr};
 
 use uuid::Uuid;
 
@@ -7,9 +7,9 @@ use super::vpn::Vpn;
 #[derive(Debug, Default)]
 pub struct ProxyDB {
     /// The mapping between IP assigned in the VPN and the public IP of the peer
-    pub internal_mapping: HashMap<Ipv4Addr, String>,
+    pub internal_mapping: BTreeMap<Ipv4Addr, String>,
     /// The mapping between the public subdomain/id and peer IP assigned in the VPN
-    pub external_mapping: HashMap<Uuid, Ipv4Addr>,
+    pub external_mapping: BTreeMap<Uuid, Ipv4Addr>,
 
     /// The VPN instance
     pub vpn: Vpn,
@@ -29,7 +29,7 @@ impl ProxyDB {
         println!("Initialized VPN: {:?}", vpn);
 
         // we also need to map the registered peers in the DB
-        vpn.peers.iter().for_each(|peer| {
+        vpn.peers.iter().for_each(|(_, peer)| {
             match peer.remote_address.clone() {
                 Some(addr) => {
                     let peer_vpn_ip = peer.allowed_ips[0].clone();
@@ -64,7 +64,7 @@ impl ProxyDB {
         match self.internal_mapping.get(&peer_vpn_ip) {
             Some(peer_public_ip) => peer_public_ip.to_owned(),
             None => {
-                // we need to read if from wg
+                // we need to read it from wg
                 self.vpn
                     .refresh_and_get_peer(peer_vpn_ip)
                     .unwrap()

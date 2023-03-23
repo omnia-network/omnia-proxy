@@ -21,7 +21,7 @@ pub fn handle_register_to_vpn(
         println!("Remote address: {}", addr);
         println!("Registering peer: {:?}", request_body);
 
-        match proxy_db.vpn.add_peer(
+        match proxy_db.vpn.add_or_update_peer(
             request_body.public_key,
             request_body.preshared_key,
             Some(addr),

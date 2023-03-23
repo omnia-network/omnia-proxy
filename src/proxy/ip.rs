@@ -1,5 +1,7 @@
 use std::net::Ipv4Addr;
 
+use super::models::AssignedIpsMap;
+
 type Ipv4Mask = Ipv4Addr;
 
 fn next_ipv4_address(ip_num: u32, netmask: Ipv4Mask) -> Option<Ipv4Addr> {
@@ -20,14 +22,14 @@ fn next_ipv4_address(ip_num: u32, netmask: Ipv4Mask) -> Option<Ipv4Addr> {
 }
 
 pub fn next_available_ipv4_address(
-    ip_addrs: &[Ipv4Addr],
+    ip_addrs: &AssignedIpsMap,
     netmask: Ipv4Mask,
     first_addr: Ipv4Addr,
 ) -> Option<Ipv4Addr> {
     // set it to the first address in the network, which is the wireguard interface address
     let mut max_ip_num = u32::from(first_addr);
 
-    for &ip in ip_addrs {
+    for (&ip, _) in ip_addrs {
         let ip_num = u32::from(ip);
         // Check if the IP address is greater than the current maximum
         if ip_num > max_ip_num {
