@@ -70,7 +70,8 @@ fn forward_request(
 
             println!("Peer internal IP: {}", peer_internal_ip);
 
-            peer_internal_ip
+            // TODO: change the default port. For not, points to the Gateway WoT Servient port
+            format!("http://{peer_internal_ip}:8888/")
         }
         None => {
             println!("Peer -> Backend");
