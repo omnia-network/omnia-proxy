@@ -153,7 +153,8 @@ async fn main() {
         });
 
     let proxy = warp::any()
-        .and(shared_filter)
+        // not sure how this impacts memory, but it should be cloned to avoid locking the mutex
+        .and(shared_filter.clone())
         .and(warp::path::full())
         .and(query_params_filter())
         .and(warp::method())
