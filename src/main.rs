@@ -118,6 +118,8 @@ fn forward_request(
         }
     };
 
+    println!("Proxied request: {method} {proxy_address} {:?} {:?}", path, query_params);
+
     (
         proxy_address,
         "".to_string(),
