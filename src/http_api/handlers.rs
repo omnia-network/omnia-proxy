@@ -31,11 +31,12 @@ pub fn handle_register_to_vpn(
 
                 let peer_public_ip = addr.ip().to_string();
                 let peer_vpn_ip = peer.allowed_ips[0].to_string();
-                proxy_db.map_peer_addresses(peer_public_ip, peer_vpn_ip.clone());
+                let peer_id = proxy_db.map_peer_addresses(peer_public_ip, peer_vpn_ip.clone());
 
                 let response = RegisterPeerResponseBody {
                     server_public_key: proxy_db.vpn.interface_public_key.clone(),
                     assigned_ip: peer_vpn_ip,
+                    assigned_id: peer_id,
                     proxy_address: get_env_var("PROXY_INTERNAL_ADDRESS"),
                 };
 

@@ -44,7 +44,7 @@ impl ProxyDb {
         vpn
     }
 
-    pub fn map_peer_addresses(&mut self, peer_public_ip: String, peer_vpn_ip: String) {
+    pub fn map_peer_addresses(&mut self, peer_public_ip: String, peer_vpn_ip: String) -> Uuid {
         let peer_id = Uuid::new_v4();
 
         println!(
@@ -62,6 +62,8 @@ impl ProxyDb {
         // save db
         // TODO: improve the logic to save db to file
         self.save_db();
+
+        peer_id
     }
 
     // TODO: handle unwraps

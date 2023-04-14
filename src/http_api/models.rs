@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 pub struct RegisterPeerRequestBody {
@@ -10,6 +11,7 @@ pub struct RegisterPeerRequestBody {
 pub struct RegisterPeerResponseBody {
     pub server_public_key: String,
     pub assigned_ip: String,
+    pub assigned_id: Uuid,
     /// the address assigned inside docker network to wireguard
     /// since proxy runs in wireguard container's network
     /// a port must be specified also
