@@ -10,7 +10,7 @@ use warp::{
 };
 use warp_reverse_proxy::QueryParameters;
 
-use crate::{env::get_env_var, proxy::proxy_db::ProxyDb};
+use crate::{env::get_env_var, http_api::models::PeerInfoResponseBody, proxy::proxy_db::ProxyDb};
 
 use super::models::{ApiError, ProxyParams, RegisterPeerRequestBody, RegisterPeerResponseBody};
 
@@ -99,22 +99,25 @@ pub fn forward_request(
             println!("Peer ID: {}", p);
 
             // TODO: handle unwrap
-            let peer_internal_ip = match proxy_db.external_mapping.get(&Uuid::try_parse(p).unwrap())
-            {
-                Some(ip) => ip.to_string(),
-                None => "".to_string(),
-            };
+            match proxy_db.get_peer_internal_ip(Uuid::try_parse(p).unwrap()) {
+                Ok(peer_internal_ip) => {
+                    println!("Peer internal IP: {}", peer_internal_ip);
 
-            println!("Peer internal IP: {}", peer_internal_ip);
+                    let forward_to_port = match headers.get("x-forward-to-port") {
+                        // TODO: handle unwrap
+                        Some(port) => port.to_str().unwrap(),
+                        // default to WoT servient default port
+                        None => "8888",
+                    };
 
-            let forward_to_port = match headers.get("x-forward-to-port") {
-                Some(port) => port.to_str().unwrap(),
-                // default to WoT servient default port
-                None => "8888",
-            };
-
-            // TODO: change the default port. For not, points to the Gateway WoT Servient port
-            format!("http://{peer_internal_ip}:{forward_to_port}/")
+                    // TODO: change the default port. For not, points to the Gateway WoT Servient port
+                    format!("http://{peer_internal_ip}:{forward_to_port}/")
+                }
+                Err(e) => {
+                    println!("Peer not registered {:?}", e);
+                    "".to_string()
+                }
+            }
         }
         None => {
             println!("Peer -> Backend");
@@ -130,8 +133,8 @@ pub fn forward_request(
                 Some(addr) => {
                     match addr.ip() {
                         IpAddr::V4(ip_v4) => {
-                            match proxy_db.internal_mapping.get(&ip_v4) {
-                                Some(peer_public_ip) => {
+                            match proxy_db.get_peer_public_ip(ip_v4) {
+                                Ok(peer_public_ip) => {
                                     // peer is registered
                                     // we add the `Forwarded` header
                                     headers.insert(
@@ -142,18 +145,10 @@ pub fn forward_request(
                                     );
                                     get_env_var("OMNIA_BACKEND_CANISTER_URL")
                                 }
-                                None => {
-                                    // peer doesn't have a public ip, let's try to read it from vpn
-                                    match proxy_db.get_peer_public_ip(ip_v4) {
-                                        Ok(public_ip) => {
-                                            format!("http://{}", public_ip).to_string()
-                                        }
-                                        Err(e) => {
-                                            // peer not registered
-                                            println!("Peer not registered {:?}", e);
-                                            "".to_string()
-                                        }
-                                    }
+                                Err(e) => {
+                                    // peer not registered
+                                    println!("Peer not registered {:?}", e);
+                                    "".to_string()
                                 }
                             }
                         }
@@ -187,4 +182,68 @@ pub fn forward_request(
         method,
         headers,
     ))
+}
+
+/// Returns information about the peer. The peer is identified by it's remote address (which should be the internal ip) and retrieved from the database
+pub fn handle_peer_info(
+    proxy_db: Arc<Mutex<ProxyDb>>,
+    remote_address: Option<SocketAddr>,
+) -> Result<Json, ApiError> {
+    let mut proxy_db = proxy_db.lock().unwrap();
+
+    match remote_address {
+        Some(addr) => {
+            println!("Retrieving peer information for remote address: {}", addr);
+            match addr.ip() {
+                IpAddr::V4(ip_v4) => {
+                    match proxy_db.get_peer_info(ip_v4) {
+                        Ok(peer_info) => {
+                            // peer is registered
+                            // we have to retrieve the public key from the vpn database
+                            match proxy_db.vpn.refresh_and_get_peer(ip_v4) {
+                                Ok(vpn_peer) => {
+                                    println!("Peer found: {ip_v4}");
+                                    let response = PeerInfoResponseBody {
+                                        id: peer_info.id,
+                                        internal_ip: ip_v4.to_string(),
+                                        public_ip: peer_info.public_ip,
+                                        proxy_address: get_env_var("PROXY_INTERNAL_ADDRESS"),
+                                        public_key: vpn_peer.public_key,
+                                    };
+                                    Ok(json(&response))
+                                }
+                                Err(e) => {
+                                    println!("Error retrieving peer public key: {}", e);
+                                    Err(ApiError {
+                                        message: format!("Error retrieving peer public key: {}", e),
+                                    })
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            // peer is not registered, return an error
+                            Err(ApiError {
+                                message: format!("Peer not registered: {}", e),
+                            })
+                        }
+                    }
+                }
+                IpAddr::V6(ip_v6) => {
+                    println!("Peer is using IPv6: {}", ip_v6);
+                    Err(ApiError {
+                        message: format!("Peer is using IPv6: {}", ip_v6),
+                    })
+                }
+            }
+        }
+        None => {
+            // this should never happen
+            let error = ApiError {
+                message: format!("Error retrieving peer information: No remote address"),
+            };
+
+            println!("{:?}", error);
+            Err(error)
+        }
+    }
 }

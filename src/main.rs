@@ -10,7 +10,7 @@ use warp_reverse_proxy::{proxy_to_and_forward_response, query_params_filter};
 
 use env::load_env_variables;
 use http_api::{
-    handlers::{forward_request, handle_register_to_vpn},
+    handlers::{forward_request, handle_peer_info, handle_register_to_vpn},
     models::RegisterPeerRequestBody,
 };
 use proxy::{proxy_db::ProxyDb, vpn::check_vpn};
@@ -41,6 +41,19 @@ async fn main() {
         .and_then(|shared_proxy_db, remote_address, request_body| async move {
             match handle_register_to_vpn(shared_proxy_db, remote_address, request_body) {
                 Ok(res) => Ok(res),
+                // TODO: handle errors and return appropriate status codes, see https://docs.rs/warp/0.3.3/warp/reject/index.html#example
+                Err(e) => Err(reject::custom(e)),
+            }
+        });
+
+    let peer_info = warp::get()
+        .and(warp::path("peer-info"))
+        .and(shared_filter.clone())
+        .and(warp::addr::remote())
+        .and_then(|shared_proxy_db, remote_address| async move {
+            match handle_peer_info(shared_proxy_db, remote_address) {
+                Ok(res) => Ok(res),
+                // TODO: handle errors and return appropriate status codes, see https://docs.rs/warp/0.3.3/warp/reject/index.html#example
                 Err(e) => Err(reject::custom(e)),
             }
         });
@@ -74,7 +87,7 @@ async fn main() {
         .and_then(proxy_to_and_forward_response)
         .and_then(log_response);
 
-    let app = warp::any().and(register_to_vpn.or(proxy));
+    let app = warp::any().and(register_to_vpn.or(peer_info).or(proxy));
 
     let port = 8081;
 

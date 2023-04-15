@@ -4,6 +4,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisteredPeer {
@@ -21,3 +22,11 @@ pub struct RegisteredPeer {
 pub type RegisteredPeersMap = BTreeMap<String, RegisteredPeer>;
 /// The assigned ips of the peers: ip -> peer public key
 pub type AssignedIpsMap = BTreeMap<Ipv4Addr, String>;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeerInfo {
+    /// The id of the peer
+    pub id: Uuid,
+    /// The public ip of the peer
+    pub public_ip: String,
+}

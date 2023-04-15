@@ -286,10 +286,13 @@ impl Vpn {
     /// `ip`: the internal vpn ip of the peer to search for
     /// returns the peer with the given internal vpn ip
     /// TODO: extremely inefficient, improve this
-    pub fn refresh_and_get_peer(&mut self, ip: Ipv4Addr) -> Result<RegisteredPeer, GenericError> {
+    pub fn refresh_and_get_peer(
+        &mut self,
+        peer_vpn_ip: Ipv4Addr,
+    ) -> Result<RegisteredPeer, GenericError> {
         // we update the internal list of peers
         // and then we search for the peer with the given internal vpn ip
-        match get_peer_config_by_vpn_ip(ip) {
+        match get_peer_config_by_vpn_ip(peer_vpn_ip) {
             Ok(peer_config) => self.add_or_update_peer(
                 peer_config.public_key,
                 peer_config.preshared_key,

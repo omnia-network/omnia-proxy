@@ -3,12 +3,12 @@ use std::{collections::BTreeMap, fs, net::Ipv4Addr};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::vpn::Vpn;
+use super::{models::PeerInfo, vpn::Vpn};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ProxyDb {
     /// The mapping between IP assigned in the VPN and the public IP of the peer
-    pub internal_mapping: BTreeMap<Ipv4Addr, String>,
+    pub internal_mapping: BTreeMap<Ipv4Addr, PeerInfo>,
     /// The mapping between the public subdomain/id and peer IP assigned in the VPN
     pub external_mapping: BTreeMap<Uuid, Ipv4Addr>,
 
@@ -55,8 +55,13 @@ impl ProxyDb {
         // TODO: handle unwrap
         let peer_vpn_ip: Ipv4Addr = peer_vpn_ip.parse().unwrap();
 
-        self.internal_mapping
-            .insert(peer_vpn_ip.clone(), peer_public_ip);
+        self.internal_mapping.insert(
+            peer_vpn_ip.clone(),
+            PeerInfo {
+                id: peer_id,
+                public_ip: peer_public_ip,
+            },
+        );
         self.external_mapping.insert(peer_id, peer_vpn_ip);
 
         // save db
@@ -67,9 +72,11 @@ impl ProxyDb {
     }
 
     // TODO: handle unwraps
+    /// Get the public IP of a peer given its VPN IP
+    /// If the public IP can't be found, reads the public IP from the VPN and updates the DB accordingly
     pub fn get_peer_public_ip(&mut self, peer_vpn_ip: Ipv4Addr) -> Result<String, String> {
         match self.internal_mapping.get(&peer_vpn_ip) {
-            Some(peer_public_ip) => Ok(peer_public_ip.to_owned()),
+            Some(peer_info) => Ok(peer_info.public_ip.to_owned()),
             None => {
                 // we need to read it from wg
                 match self.vpn.refresh_and_get_peer(peer_vpn_ip) {
@@ -90,6 +97,22 @@ impl ProxyDb {
                     Err(e) => Err(e),
                 }
             }
+        }
+    }
+
+    /// Get the internal VPN IP of a peer given its ID
+    pub fn get_peer_internal_ip(&self, peer_id: Uuid) -> Result<Ipv4Addr, String> {
+        match self.external_mapping.get(&peer_id) {
+            Some(peer_internal_ip) => Ok(peer_internal_ip.to_owned()),
+            None => Err(format!("Peer with id {peer_id} not found")),
+        }
+    }
+
+    /// Get the peer info
+    pub fn get_peer_info(&self, peer_vpn_ip: Ipv4Addr) -> Result<PeerInfo, String> {
+        match self.internal_mapping.get(&peer_vpn_ip) {
+            Some(peer_info) => Ok(peer_info.to_owned()),
+            None => Err(format!("Peer with internal IP {peer_vpn_ip} not found")),
         }
     }
 
@@ -117,10 +140,8 @@ impl ProxyDb {
     pub fn save_db(&self) {
         // TODO: handle unwrap
         let db_json = serde_json::to_string(&self).unwrap();
-        let vpn_json = serde_json::to_string(&self.vpn).unwrap();
 
         println!("serialized db: {db_json}");
-        println!("serialized db: {vpn_json}");
 
         fs::write("data/db.json", db_json).unwrap();
     }
