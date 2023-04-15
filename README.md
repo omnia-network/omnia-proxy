@@ -1,5 +1,7 @@
 # omnia-proxy
-The omnia-proxy is a proxy server that is used to expose Gateways to the internet. It is a reverse proxy that is configured to route traffic to the appropriate Gateway based on the `X-Forward-To` header of the request.
+The omnia-proxy is a proxy server that is used to expose Gateways to the internet. It is a reverse proxy that is configured to route traffic to the appropriate Gateway based on the `X-Forward-To-Peer` header of the request. This header **must** contain the **UUID** assigned by the proxy to the Gateway.
+
+A `X-Forward-To-Port` header can be used to specify the port to which the request should be forwarded (by default, it is set to `8888`).
 
 Since it uses WireGuard under the hood, the Backend would see the request as coming from the omnia-proxy and not the actual Gateway. Because of this, the omnia-proxy will also keep track of Gateways remote IPs and add the `X-Forwarded-For` header to the request to preserve the original Gateway IP address.
 
@@ -63,9 +65,22 @@ The proxy will add the Gateway to the WireGuard configuration and will return so
     "proxy_address": "<address-of-the-proxy-to-send-requests-to-be-forwarded>"
 }
 ```
-In particular, the `proxy_address` must be the same specified in the `PROXY_INTERNAL_ADDRESS` env var.
+In particular, the `proxy_address` is the same specified in the `PROXY_INTERNAL_ADDRESS` env var.
 
-Set the Gateway's WireGuard configuration accordingly.
+Set the Gateway's WireGuard configuration accordingly. An example of the configuration can be:
+```
+[Interface]
+Address = <assigned_ip>/32
+ListenPort = 51820
+PrivateKey = <gateway_private_key>
+
+[Peer]
+PublicKey = <server_public_key>
+AllowedIPs = 0.0.0.0/0
+Endpoint = <PROXY_SERVER_PUBLIC_URL>:51820
+
+```
+A useful tool to generate WireGuard configurations is [WireGuard Tools](https://www.wireguardconfig.com/).
 
 From the Gateway, send HTTP requests that are supposed to be sent to the Backend to `PROXY_INTERNAL_ADDRESS`.
 

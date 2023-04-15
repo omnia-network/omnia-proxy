@@ -83,12 +83,13 @@ pub fn forward_request(
 
     // here we handle two cases:
     // peer -> backend: the peer is sending a request to the backend, we proxy it attaching the peer's public IP
-    // backend -> peer: the backend is requesting the peer inserting peer's public IP in the `X-Forward-To` header
+    // backend -> peer: the backend is requesting the peer, inserting peer's ID in the `X-Forward-To-Peer` header
+    //                  and eventually the peer port in the `X-Forward-To-Port` header
 
     let mut headers: HeaderMap = request_headers.clone();
 
     // TODO: remove empty string return and use better logic
-    let proxy_address = match headers.get("x-forward-to") {
+    let proxy_address = match headers.get("x-forward-to-peer") {
         Some(peer_id) => {
             println!("Backend -> Peer");
             // backend -> peer
@@ -106,8 +107,14 @@ pub fn forward_request(
 
             println!("Peer internal IP: {}", peer_internal_ip);
 
+            let forward_to_port = match headers.get("x-forward-to-port") {
+                Some(port) => port.to_str().unwrap(),
+                // default to WoT servient default port
+                None => "8888",
+            };
+
             // TODO: change the default port. For not, points to the Gateway WoT Servient port
-            format!("http://{peer_internal_ip}:8888/")
+            format!("http://{peer_internal_ip}:{forward_to_port}/")
         }
         None => {
             println!("Peer -> Backend");
