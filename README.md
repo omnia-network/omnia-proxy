@@ -18,8 +18,6 @@ PROXY_PUBLIC_PORT=80
 PROXY_SERVER_PUBLIC_URL=proxy.omnia-iot.com
 
 WIREGUARD_CONTAINER_NAME=wireguard
-# the url where to forward the http requests, you can use this to try
-OMNIA_BACKEND_CANISTER_URL=https://swapi.dev/
 # the ip assigned to wireguard container, since proxy is attached to its network
 # the port specified is the port exposed by the proxy
 PROXY_INTERNAL_ADDRESS=172.19.0.2:8081
@@ -82,7 +80,7 @@ Endpoint = <PROXY_SERVER_PUBLIC_URL>:51820
 ```
 A useful tool to generate WireGuard configurations is [WireGuard Tools](https://www.wireguardconfig.com/).
 
-From the Gateway, send HTTP requests that are supposed to be sent to the Backend to `PROXY_INTERNAL_ADDRESS`.
+From the Gateway, send HTTP requests that are supposed to be sent to the Backend to `PROXY_INTERNAL_ADDRESS`, adding a `X-Destination-Url` header to tell the proxy where to forward the request, e.g. the Backend canister URL or the Application canister URL.
 
 ## Current limitations
 - The proxy should dump the configuration to `volumes/proxy-rs/data/db.json` but for some reason the vpn key contains empty values.

@@ -44,7 +44,6 @@ services:
     environment:
       - ENV=$ENV
       - WIREGUARD_CONTAINER_NAME=wireguard
-      - OMNIA_BACKEND_CANISTER_URL=$OMNIA_BACKEND_CANISTER_URL
       # the ip assigned to wireguard container, since proxy is attached to its network
       # the port specified is the port exposed by the proxy
       - PROXY_INTERNAL_ADDRESS=172.19.0.2:8081

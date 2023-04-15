@@ -77,7 +77,7 @@ pub fn forward_request(
     remote_addr: Option<SocketAddr>,
     request_headers: HeaderMap,
 ) -> Result<ProxyParams, ApiError> {
-    let mut proxy_db = proxy_db.lock().unwrap();
+    let proxy_db = proxy_db.lock().unwrap();
 
     println!("Proxying for remote address: {:?}", remote_addr);
 
@@ -133,17 +133,37 @@ pub fn forward_request(
                 Some(addr) => {
                     match addr.ip() {
                         IpAddr::V4(ip_v4) => {
-                            match proxy_db.get_peer_public_ip(ip_v4) {
-                                Ok(peer_public_ip) => {
+                            match proxy_db.get_peer_info(ip_v4) {
+                                Ok(peer_info) => {
                                     // peer is registered
-                                    // we add the `Forwarded` header
+                                    // add the `X-Forwarded-For` header
                                     headers.insert(
                                         "X-Forwarded-For",
-                                        peer_public_ip
+                                        peer_info
+                                            .public_ip
                                             .parse()
-                                            .expect("Failed to parse forwarded header"),
+                                            .expect("Failed to parse public IP in header"),
                                     );
-                                    get_env_var("OMNIA_BACKEND_CANISTER_URL")
+                                    // add the peer's ID header
+                                    headers.insert(
+                                        "X-Peer-Id",
+                                        peer_info
+                                            .id
+                                            .to_string()
+                                            .parse()
+                                            .expect("Failed to parse peer ID in header"),
+                                    );
+
+                                    // read `X-Destination-Url` header, which contains the url to where to forward the request
+                                    match headers.get("x-destination-url") {
+                                        Some(destination_url) => {
+                                            destination_url.to_str().unwrap().to_string()
+                                        }
+                                        None => {
+                                            println!("No destination URL found");
+                                            "".to_string()
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     // peer not registered

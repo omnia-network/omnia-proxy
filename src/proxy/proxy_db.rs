@@ -71,34 +71,34 @@ impl ProxyDb {
         peer_id
     }
 
-    // TODO: handle unwraps
     /// Get the public IP of a peer given its VPN IP
     /// If the public IP can't be found, reads the public IP from the VPN and updates the DB accordingly
-    pub fn get_peer_public_ip(&mut self, peer_vpn_ip: Ipv4Addr) -> Result<String, String> {
-        match self.internal_mapping.get(&peer_vpn_ip) {
-            Some(peer_info) => Ok(peer_info.public_ip.to_owned()),
-            None => {
-                // we need to read it from wg
-                match self.vpn.refresh_and_get_peer(peer_vpn_ip) {
-                    Ok(peer) => {
-                        match peer.remote_address.clone() {
-                            Some(addr) => {
-                                let peer_public_ip = addr.ip().to_string();
+    // pub fn get_peer_public_ip(&mut self, peer_vpn_ip: Ipv4Addr) -> Result<String, String> {
+    //     // TODO: handle unwraps
+    //     match self.internal_mapping.get(&peer_vpn_ip) {
+    //         Some(peer_info) => Ok(peer_info.public_ip.to_owned()),
+    //         None => {
+    //             // we need to read it from wg
+    //             match self.vpn.refresh_and_get_peer(peer_vpn_ip) {
+    //                 Ok(peer) => {
+    //                     match peer.remote_address.clone() {
+    //                         Some(addr) => {
+    //                             let peer_public_ip = addr.ip().to_string();
 
-                                // save the DB to disk
-                                // TODO: change the logic for saving the db to file
-                                self.save_db();
+    //                             // save the DB to disk
+    //                             // TODO: change the logic for saving the db to file
+    //                             self.save_db();
 
-                                Ok(peer_public_ip)
-                            }
-                            None => Err("Peer remote address not set".to_string()),
-                        }
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-        }
-    }
+    //                             Ok(peer_public_ip)
+    //                         }
+    //                         None => Err("Peer remote address not set".to_string()),
+    //                     }
+    //                 }
+    //                 Err(e) => Err(e),
+    //             }
+    //         }
+    //     }
+    // }
 
     /// Get the internal VPN IP of a peer given its ID
     pub fn get_peer_internal_ip(&self, peer_id: Uuid) -> Result<Ipv4Addr, String> {
@@ -109,6 +109,7 @@ impl ProxyDb {
     }
 
     /// Get the peer info
+    /// TODO: make it refresh the internal mapping if the peer is not found
     pub fn get_peer_info(&self, peer_vpn_ip: Ipv4Addr) -> Result<PeerInfo, String> {
         match self.internal_mapping.get(&peer_vpn_ip) {
             Some(peer_info) => Ok(peer_info.to_owned()),
