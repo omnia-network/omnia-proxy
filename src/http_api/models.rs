@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use warp::filters::path::FullPath;
+use warp::http::{HeaderMap, Method};
+use warp_reverse_proxy::QueryParameters;
 
 #[derive(Deserialize, Debug)]
 pub struct RegisterPeerRequestBody {
@@ -24,3 +27,5 @@ pub struct ApiError {
 }
 
 impl warp::reject::Reject for ApiError {}
+
+pub type ProxyParams = (String, String, FullPath, QueryParameters, Method, HeaderMap);

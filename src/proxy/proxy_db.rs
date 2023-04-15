@@ -67,25 +67,28 @@ impl ProxyDb {
     }
 
     // TODO: handle unwraps
-    pub fn get_peer_public_ip(&mut self, peer_vpn_ip: Ipv4Addr) -> String {
+    pub fn get_peer_public_ip(&mut self, peer_vpn_ip: Ipv4Addr) -> Result<String, String> {
         match self.internal_mapping.get(&peer_vpn_ip) {
-            Some(peer_public_ip) => peer_public_ip.to_owned(),
+            Some(peer_public_ip) => Ok(peer_public_ip.to_owned()),
             None => {
                 // we need to read it from wg
-                let public_ip = self
-                    .vpn
-                    .refresh_and_get_peer(peer_vpn_ip)
-                    .unwrap()
-                    .remote_address
-                    .unwrap()
-                    .ip()
-                    .to_string();
+                match self.vpn.refresh_and_get_peer(peer_vpn_ip) {
+                    Ok(peer) => {
+                        match peer.remote_address.clone() {
+                            Some(addr) => {
+                                let peer_public_ip = addr.ip().to_string();
 
-                // save the DB to disk
-                // TODO: change the logic for saving the db to file
-                self.save_db();
+                                // save the DB to disk
+                                // TODO: change the logic for saving the db to file
+                                self.save_db();
 
-                public_ip
+                                Ok(peer_public_ip)
+                            }
+                            None => Err("Peer remote address not set".to_string()),
+                        }
+                    }
+                    Err(e) => Err(e),
+                }
             }
         }
     }
