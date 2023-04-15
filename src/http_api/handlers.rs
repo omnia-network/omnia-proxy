@@ -136,9 +136,9 @@ pub fn forward_request(
                             match proxy_db.get_peer_info(ip_v4) {
                                 Ok(peer_info) => {
                                     // peer is registered
-                                    // add the `X-Forwarded-For` header
+                                    // add the `X-Proxied-For` header
                                     headers.insert(
-                                        "X-Forwarded-For",
+                                        "X-Proxied-For",
                                         peer_info
                                             .public_ip
                                             .parse()

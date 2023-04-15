@@ -3,7 +3,7 @@ The omnia-proxy is a proxy server that is used to expose Gateways to the interne
 
 A `X-Forward-To-Port` header can be used to specify the port to which the request should be forwarded (by default, it is set to `8888`).
 
-Since it uses WireGuard under the hood, the Backend would see the request as coming from the omnia-proxy and not the actual Gateway. Because of this, the omnia-proxy will also keep track of Gateways remote IPs and add the `X-Forwarded-For` header to the request to preserve the original Gateway IP address.
+Since it uses WireGuard under the hood, the Backend would see the request as coming from the omnia-proxy and not the actual Gateway. Because of this, the omnia-proxy will also keep track of Gateways remote IPs and add the `X-Proxied-For` header to the request to preserve the original Gateway IP address.
 
 ## Usage
 The omnia-proxy is supposed to run in Docker on a **t2.small** EC2 instance. **t1.micro** don't have enough memory to build the containers.
