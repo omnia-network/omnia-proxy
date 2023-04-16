@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     collections::BTreeMap,
     net::{Ipv4Addr, SocketAddr},
     str::FromStr,
@@ -223,11 +222,12 @@ impl Vpn {
     ) -> Result<RegisteredPeer, GenericError> {
         // if peer already exists, update its remote address and return it
 
-        match self.peers.get(&public_key).borrow_mut() {
+        match self.peers.get_mut(&public_key) {
             Some(peer) => {
-                peer.to_owned().remote_address = remote_address;
+                peer.remote_address = remote_address;
+                peer.preshared_key = preshared_key;
 
-                Ok(peer.to_owned())
+                Ok(peer.clone())
             }
             None => {
                 // otherwise, add the peer to the vpn

@@ -103,4 +103,4 @@ It will receive a response like:
 ```
 
 ## Current limitations
-- The proxy should dump the configuration to `volumes/proxy-rs/data/db.json` but for some reason the vpn key contains empty values.
+- The proxy **doesn't** remove unused/disconnected peers from the WireGuard configuration and from the local database.
