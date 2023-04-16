@@ -37,7 +37,7 @@ pub fn handle_register_to_vpn(
 
                 let peer_public_ip = addr.ip().to_string();
                 let peer_vpn_ip = peer.allowed_ips[0].to_string();
-                let peer_id = proxy_db.map_peer_addresses(peer_public_ip, peer_vpn_ip.clone());
+                let peer_id = proxy_db.insert_peer(peer_public_ip, peer_vpn_ip.clone());
 
                 let response = RegisterPeerResponseBody {
                     server_public_key: proxy_db.vpn.interface_public_key.clone(),
@@ -77,7 +77,7 @@ pub fn forward_request(
     remote_addr: Option<SocketAddr>,
     request_headers: HeaderMap,
 ) -> Result<ProxyParams, ApiError> {
-    let proxy_db = proxy_db.lock().unwrap();
+    let mut proxy_db = proxy_db.lock().unwrap();
 
     println!("Proxying for remote address: {:?}", remote_addr);
 

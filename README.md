@@ -45,6 +45,8 @@ PrivateKey = <generated-private-key>
 ```
 In this way, every time the container is stopped and started, the WireGuard configuration will be saved (including newly added Peers) and the container will start with the same configuration. See also [volumes/wireguard/wg0-example.conf](./volumes/wireguard/wg0-example.conf).
 
+## Endpoints
+### `/register-to-vpn`
 To connect a Gateway, send this HTTP request to the `/register-to-vpn` endpoint of the proxy:
 ```bash
 curl -X POST \
@@ -81,6 +83,24 @@ Endpoint = <PROXY_SERVER_PUBLIC_URL>:51820
 A useful tool to generate WireGuard configurations is [WireGuard Tools](https://www.wireguardconfig.com/).
 
 From the Gateway, send HTTP requests that are supposed to be sent to the Backend to `PROXY_INTERNAL_ADDRESS`, adding a `X-Destination-Url` header to tell the proxy where to forward the request, e.g. the Backend canister URL or the Application canister URL.
+
+### `/peer-info`
+**Once a Peer is connected to the VPN**, it get its own information by sending a GET request to the `/peer-info` endpoint of the proxy:
+```bash
+curl -X GET \
+  http://<PROXY_INTERNAL_ADDRESS>/peer-info \
+  -H 'X-Forward-To-Peer: <gateway-uuid>'
+```
+It will receive a response like:
+```json
+{
+    "id": "<gateway-uuid>",
+    "internal_ip": "<gateway-ip-in-the-vpn>",
+    "public_ip": "<gateway-public-ip>",
+    "public_key": "<gateway-public-key>",
+    "proxy_address": "<proxy-internal-address>"
+}
+```
 
 ## Current limitations
 - The proxy should dump the configuration to `volumes/proxy-rs/data/db.json` but for some reason the vpn key contains empty values.

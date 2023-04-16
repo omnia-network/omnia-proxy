@@ -35,7 +35,7 @@ impl ProxyDb {
                 Some(addr) => {
                     let peer_vpn_ip = peer.allowed_ips[0].clone();
 
-                    self.map_peer_addresses(addr.ip().to_string(), peer_vpn_ip.to_string());
+                    self.insert_peer(addr.ip().to_string(), peer_vpn_ip.to_string());
                 }
                 None => println!("Peer remote address not set, skipping mapping..."),
             };
@@ -44,7 +44,8 @@ impl ProxyDb {
         vpn
     }
 
-    pub fn map_peer_addresses(&mut self, peer_public_ip: String, peer_vpn_ip: String) -> Uuid {
+    /// TODO: change input types to `Ipv4Addr` to avoid parsing and be consistent with the db
+    pub fn insert_peer(&mut self, peer_public_ip: String, peer_vpn_ip: String) -> Uuid {
         let peer_id = Uuid::new_v4();
 
         println!(
@@ -69,6 +70,28 @@ impl ProxyDb {
         self.save_db();
 
         peer_id
+    }
+
+    pub fn update_peer(
+        &mut self,
+        peer_vpn_ip: Ipv4Addr,
+        peer_public_ip: String,
+    ) -> Result<PeerInfo, String> {
+        let peer_info = {
+            let peer_info = self
+                .internal_mapping
+                .get_mut(&peer_vpn_ip)
+                .ok_or(format!("Peer with VPN IP {} not found", peer_vpn_ip))?;
+
+            peer_info.public_ip = peer_public_ip;
+            self.external_mapping.insert(peer_info.id, peer_vpn_ip);
+            peer_info.clone()
+        };
+
+        // save db
+        self.save_db();
+
+        Ok(peer_info)
     }
 
     /// Get the public IP of a peer given its VPN IP
@@ -108,13 +131,12 @@ impl ProxyDb {
         }
     }
 
-    /// Get the peer info
-    /// TODO: make it refresh the internal mapping if the peer is not found
-    pub fn get_peer_info(&self, peer_vpn_ip: Ipv4Addr) -> Result<PeerInfo, String> {
-        match self.internal_mapping.get(&peer_vpn_ip) {
-            Some(peer_info) => Ok(peer_info.to_owned()),
-            None => Err(format!("Peer with internal IP {peer_vpn_ip} not found")),
-        }
+    /// Get the peer info, refreshing the public IP from the VPN
+    /// TODO: optimize this to avoid refreshing every time (e.g. use a timeout for each peer)
+    pub fn get_peer_info(&mut self, peer_vpn_ip: Ipv4Addr) -> Result<PeerInfo, String> {
+        let peer = self.vpn.refresh_and_get_peer(peer_vpn_ip)?;
+        // TODO: handle unwrap
+        self.update_peer(peer_vpn_ip, peer.remote_address.unwrap().ip().to_string())
     }
 
     /// Load the DB from disk
