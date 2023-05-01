@@ -105,3 +105,6 @@ It will receive a response like:
 ## Current limitations
 - The proxy **doesn't** remove unused/disconnected peers from the WireGuard configuration and from the local database.
 - Every time the proxy received a request, it reads WireGuard status from docker command line to get the updated public IP of the peers. This is not efficient and should be improved.
+
+## Improvements
+We could use [localtunnel server](https://github.com/localtunnel/server) to achieve the same result, without WireGuard and with a simpler setup.
