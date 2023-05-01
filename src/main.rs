@@ -58,6 +58,8 @@ async fn main() {
             }
         });
 
+    let health_check = warp::get().and(warp::path("health-check")).map(|| "OK");
+
     let proxy = warp::any()
         // not sure how this impacts memory, but it should be cloned to avoid locking the mutex
         .and(shared_filter.clone())
@@ -87,7 +89,7 @@ async fn main() {
         .and_then(proxy_to_and_forward_response)
         .and_then(log_response);
 
-    let app = warp::any().and(register_to_vpn.or(peer_info).or(proxy));
+    let app = warp::any().and(register_to_vpn.or(peer_info).or(health_check).or(proxy));
 
     let port = 8081;
 
