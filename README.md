@@ -12,10 +12,13 @@ First, create a `.env` file in the root of the project with the following conten
 ```bash
 # to avoid loading .env file from the host (these env vars are injected by docker compose)
 ENV=production
-# the port exposed by the proxy, which needs to be enabled also as ingress on the EC2 instance
+# the proxy port to expose outside, which needs to be enabled also as ingress on the EC2 instance
+# typically, if you enable HTTPS, this should be 443, otherwise 80
 PROXY_PUBLIC_PORT=80
 # the public ip of the EC2 instance, currently configured on GoDaddy as
 PROXY_SERVER_PUBLIC_URL=proxy.omnia-iot.com
+# the HTTP server listens to this port. You cannot change this port unless you enable HTTPS
+PROXY_PORT=8081
 # there are also some env variables to enable HTTPS, see below.
 ```
 
@@ -42,7 +45,9 @@ PrivateKey = <generated-private-key>
 In this way, every time the container is stopped and started, the WireGuard configuration will be saved (including newly added Peers) and the container will start with the same configuration. See also [volumes/wireguard/wg0-example.conf](./volumes/wireguard/wg0-example.conf).
 
 ## HTTPS support
-To enable HTTPS support, you have to create an HTTPS certificate and put it in the volume mounted in `proxy-rs` container. You can use [certbot (running in Docker)](https://eff-certbot.readthedocs.io/en/stable/install.html#alternative-1-docker) to create a certificate for the domain you want to use:
+By default, the proxy is configured to use HTTP.
+
+To **add** (**and only add**, since the proxy needs to listen on HTTP inside the VPN) HTTPS support, you have to create an HTTPS certificate and put it in the volume mounted in `proxy-rs` container. You can use [certbot (running in Docker)](https://eff-certbot.readthedocs.io/en/stable/install.html#alternative-1-docker) to create a certificate for the domain you want to use:
 ```bash
 docker run -it --rm \
     -v <absolute-path-to-this-folder>/volumes/proxy-rs/certs:/etc/letsencrypt \
@@ -69,6 +74,8 @@ volumes
 ```
 You can then set the environment variables in the `.env` file to enable HTTPS support:
 ```bash
+# override the port set for HTTP for public facing communications. 443 is the only port that can be used for HTTPS
+PROXY_PORT=443
 ENABLE_HTTPS=true
 HTTPS_CERT_PATH=/proxy/certs/live/<your-domain>/fullchain.pem
 HTTPS_KEY_PATH=/proxy/certs/live/<your-domain>/privkey.pem
@@ -139,6 +146,7 @@ This endpoint just returns a `200 OK` response.
 ## Current limitations
 - The proxy **doesn't** remove unused/disconnected peers from the WireGuard configuration and from the local database.
 - Every time the proxy received a request, it <u>reads WireGuard status from docker command line</u> to get the updated public IP of the peers. This is not efficient and should be improved.
+- communications between peers and proxy inside the VPN are on HTTP, _not HTTPS_.
 
 ## Improvements
 We could use [localtunnel server](https://github.com/localtunnel/server) to achieve the same result, without WireGuard and with a simpler setup.

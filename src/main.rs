@@ -3,6 +3,7 @@ mod http_api;
 mod models;
 mod proxy;
 
+use futures::future;
 use std::sync::{Arc, Mutex};
 use warp::reject;
 use warp::{http::Response, hyper::Body, Filter, Rejection, Reply};
@@ -93,24 +94,27 @@ async fn main() {
 
     let app = warp::any().and(health_check.or(register_to_vpn).or(peer_info).or(proxy));
 
-    let port = 8081;
+    let http_port = 8081;
+    let https_port = 443;
 
-    println!("Listening on port: {}", port);
+    println!("Listening on port (HTTP): {}", http_port);
 
     // spawn proxy server
-    let serve = warp::serve(app);
+    // we have to listen to HTTP in any case to handle communication within wireguard network
+    let (_http_addr, http_warp) = warp::serve(app.clone()).bind_ephemeral(([0, 0, 0, 0], http_port));
 
     if get_env_var("ENABLE_HTTPS") == "true" {
-        println!("HTTPS: enabled");
-        serve
+        println!("HTTPS: enabled on port 443");
+        let (_https_addr, https_warp) = warp::serve(app)
             .tls()
             .cert_path(get_env_var("HTTPS_CERT_PATH"))
             .key_path(get_env_var("HTTPS_KEY_PATH"))
-            .run(([0, 0, 0, 0], port))
-            .await;
+            .bind_ephemeral(([0, 0, 0, 0], https_port));
+
+        future::join(http_warp, https_warp).await;
     } else {
         println!("HTTPS: disabled");
-        serve.run(([0, 0, 0, 0], port)).await;
+        http_warp.await;
     }
 }
 
