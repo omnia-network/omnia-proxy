@@ -35,6 +35,8 @@ async fn main() {
 
     let shared_filter = warp::any().map(move || shared_proxy_db.clone());
 
+    let health_check = warp::get().and(warp::path("health-check")).map(|| "OK");
+
     let register_to_vpn = warp::post()
         .and(warp::path("register-to-vpn"))
         .and(shared_filter.clone())
@@ -59,8 +61,6 @@ async fn main() {
                 Err(e) => Err(reject::custom(e)),
             }
         });
-
-    let health_check = warp::get().and(warp::path("health-check")).map(|| "OK");
 
     let proxy = warp::any()
         // not sure how this impacts memory, but it should be cloned to avoid locking the mutex
@@ -91,7 +91,7 @@ async fn main() {
         .and_then(proxy_to_and_forward_response)
         .and_then(log_response);
 
-    let app = warp::any().and(register_to_vpn.or(peer_info).or(health_check).or(proxy));
+    let app = warp::any().and(health_check.or(register_to_vpn).or(peer_info).or(proxy));
 
     let port = 8081;
 
@@ -101,11 +101,15 @@ async fn main() {
     let serve = warp::serve(app);
 
     if get_env_var("ENABLE_HTTPS") == "true" {
-        serve.tls()
+        println!("HTTPS: enabled");
+        serve
+            .tls()
             .cert_path(get_env_var("HTTPS_CERT_PATH"))
             .key_path(get_env_var("HTTPS_KEY_PATH"))
-            .run(([0, 0, 0, 0], port)).await;
+            .run(([0, 0, 0, 0], port))
+            .await;
     } else {
+        println!("HTTPS: disabled");
         serve.run(([0, 0, 0, 0], port)).await;
     }
 }
