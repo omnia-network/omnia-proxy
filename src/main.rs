@@ -15,6 +15,8 @@ use http_api::{
 };
 use proxy::{proxy_db::ProxyDb, vpn::check_vpn};
 
+use crate::env::get_env_var;
+
 async fn log_response(response: Response<Body>) -> Result<impl Reply, Rejection> {
     println!("{:?}", response);
     Ok(response)
@@ -96,7 +98,16 @@ async fn main() {
     println!("Listening on port: {}", port);
 
     // spawn proxy server
-    warp::serve(app).run(([0, 0, 0, 0], port)).await;
+    let serve = warp::serve(app);
+
+    if get_env_var("ENABLE_HTTPS") == "true" {
+        serve.tls()
+            .cert_path(get_env_var("HTTPS_CERT_PATH"))
+            .key_path(get_env_var("HTTPS_KEY_PATH"))
+            .run(([0, 0, 0, 0], port)).await;
+    } else {
+        serve.run(([0, 0, 0, 0], port)).await;
+    }
 }
 
 // TODO: write tests

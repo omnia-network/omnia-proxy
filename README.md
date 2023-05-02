@@ -1,7 +1,7 @@
 # omnia-proxy
-The omnia-proxy is a proxy server that is used to expose Gateways to the internet. It is a reverse proxy that is configured to route traffic to the appropriate Gateway based on the `X-Forward-To-Peer` header of the request. This header **must** contain the **UUID** assigned by the proxy to the Gateway.
+The omnia-proxy is a proxy server that is used to expose Gateways to the internet. It is a reverse proxy that is configured to route traffic to the appropriate Gateway based on the `X-Forward-To-Peer` header of the request. This header **must** contain the **UUID** assigned by the proxy to the Gateway. See [Endpoints](#endpoints) for more details.
 
-A `X-Forward-To-Port` header can be used to specify the port to which the request should be forwarded (by default, it is set to `8888`).
+A `X-Forward-To-Port` header can be used to specify to which port on the peer the request should be forwarded (by default, it is set to `8888`, the default Gateway WoT Servient port).
 
 Since it uses WireGuard under the hood, the Backend would see the request as coming from the omnia-proxy and not the actual Gateway. Because of this, the omnia-proxy will also keep track of Gateways remote IPs and add the `X-Proxied-For` header to the request to preserve the original Gateway IP address.
 
@@ -16,11 +16,7 @@ ENV=production
 PROXY_PUBLIC_PORT=80
 # the public ip of the EC2 instance, currently configured on GoDaddy as
 PROXY_SERVER_PUBLIC_URL=proxy.omnia-iot.com
-
-WIREGUARD_CONTAINER_NAME=wireguard
-# the ip assigned to wireguard container, since proxy is attached to its network
-# the port specified is the port exposed by the proxy
-PROXY_INTERNAL_ADDRESS=172.19.0.2:8081
+# there are also some env variables to enable HTTPS, see below.
 ```
 
 To run the proxy, use the following command:
@@ -45,6 +41,40 @@ PrivateKey = <generated-private-key>
 ```
 In this way, every time the container is stopped and started, the WireGuard configuration will be saved (including newly added Peers) and the container will start with the same configuration. See also [volumes/wireguard/wg0-example.conf](./volumes/wireguard/wg0-example.conf).
 
+## HTTPS support
+To enable HTTPS support, you have to create an HTTPS certificate and put it in the volume mounted in `proxy-rs` container. You can use [certbot (running in Docker)](https://eff-certbot.readthedocs.io/en/stable/install.html#alternative-1-docker) to create a certificate for the domain you want to use:
+```bash
+docker run -it --rm \
+    -v <absolute-path-to-this-folder>/volumes/proxy-rs/certs:/etc/letsencrypt \
+    -p 80:80 \
+    certbot/certbot certonly --standalone -d <your-domain>
+```
+Follow the steps in the interactive shell.
+
+> This will spawn a temporary HTTP server on port `80` to enable Let's Encrypt to verify the domain. Make sure no other process is listening on that port.
+
+You should end up with a `volumes` folder structure like:
+```
+volumes
+├── proxy-rs
+│   ├── certs
+│   │   ├── live
+│   │   │   └── <your-domain>
+│   │   │       ├── fullchain.pem
+│   │   │       ├── privkey.pem
+│   │   │       └── README
+│   │   ├── archive
+│   │   ├── renewal
+...
+```
+You can then set the environment variables in the `.env` file to enable HTTPS support:
+```bash
+ENABLE_HTTPS=true
+HTTPS_CERT_PATH=/proxy/certs/live/<your-domain>/fullchain.pem
+HTTPS_KEY_PATH=/proxy/certs/live/<your-domain>/privkey.pem
+```
+and start the proxy with Docker Compose as usual.
+
 ## Endpoints
 ### `/register-to-vpn`
 To connect a Gateway, send this HTTP request to the `/register-to-vpn` endpoint of the proxy:
@@ -62,6 +92,7 @@ The proxy will add the Gateway to the WireGuard configuration and will return so
 {
     "server_public_key": "<wireguard-server-public-key>",
     "assigned_ip": "<ip-assigned-to-the-gateway-in-the-vpn>",
+    "assigned_id": "<uuid-assigned-to-the-gateway-by-the-proxy>",
     "proxy_address": "<address-of-the-proxy-to-send-requests-to-be-forwarded>"
 }
 ```
@@ -102,9 +133,12 @@ It will receive a response like:
 }
 ```
 
+### `/health-check`
+This endpoint just returns a `200 OK` response.
+
 ## Current limitations
 - The proxy **doesn't** remove unused/disconnected peers from the WireGuard configuration and from the local database.
-- Every time the proxy received a request, it reads WireGuard status from docker command line to get the updated public IP of the peers. This is not efficient and should be improved.
+- Every time the proxy received a request, it <u>reads WireGuard status from docker command line</u> to get the updated public IP of the peers. This is not efficient and should be improved.
 
 ## Improvements
 We could use [localtunnel server](https://github.com/localtunnel/server) to achieve the same result, without WireGuard and with a simpler setup.

@@ -47,9 +47,13 @@ services:
       # the ip assigned to wireguard container, since proxy is attached to its network
       # the port specified is the port exposed by the proxy
       - PROXY_INTERNAL_ADDRESS=172.19.0.2:8081
+      - ENABLE_HTTPS=$ENABLE_HTTPS
+      - HTTPS_CERT_PATH=$HTTPS_CERT_PATH
+      - HTTPS_KEY_PATH=$HTTPS_KEY_PATH
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./volumes/proxy-rs/data:/proxy/data
+      - ./volumes/proxy-rs/certs:/proxy/certs
     network_mode: service:wireguard
 
 networks:
