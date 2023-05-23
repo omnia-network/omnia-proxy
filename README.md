@@ -150,3 +150,6 @@ This endpoint just returns a `200 OK` response.
 
 ## Improvements
 We could use [localtunnel server](https://github.com/localtunnel/server) to achieve the same result, without WireGuard and with a simpler setup.
+
+## License
+Licensed under the [MIT License](./LICENSE).
